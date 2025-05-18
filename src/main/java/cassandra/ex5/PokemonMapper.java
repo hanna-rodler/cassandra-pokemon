@@ -18,4 +18,7 @@ public interface PokemonMapper {
 
     @DaoFactory
     TrainerStatsDao trainerStatsDao(@DaoKeyspace CqlIdentifier keyspace);
+
+    @DaoFactory
+    HighestTrainerStatsDao highestTratinerStatsDao(@DaoKeyspace CqlIdentifier keyspace);
 }

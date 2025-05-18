@@ -1,14 +1,11 @@
 package cassandra.ex5;
 
-import cassandra.ex5_old.TrainingHistory;
 import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
 import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
 import java.time.Instant;
-import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -186,8 +183,16 @@ public class TrainingSession {
                 ", pokemonId=" + pokemonId +
                 ", species='" + species + '\'' +
                 ", trainerId=" + trainerId +
+                ", timestamp=" + timestamp +
                 ", totalUpdate=" + totalUpdate +
-                ", hpUpdate=" + hpUpdate   +
+                ", hpUpdate=" + hpUpdate +
+                ", attackUpdate=" + attackUpdate +
+                ", defenseUpdate=" + defenseUpdate +
+                ", speedAttackUpdate=" + speedAttackUpdate +
+                ", speedDefenceUpdate=" + speedDefenceUpdate +
+                ", speedUpdate=" + speedUpdate +
+                ", generationUpdate=" + generationUpdate +
+                ", legendaryUpdate=" + legendaryUpdate +
                 '}';
     }
 }

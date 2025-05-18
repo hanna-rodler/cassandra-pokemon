@@ -12,10 +12,12 @@ public class TrainerStats {
 
     @PartitionKey
     private UUID trainerId;
-    @ClusteringColumn(1)
-    private String species;
-    @ClusteringColumn
+
     private int totalTrainings;
+
+    @ClusteringColumn
+    private String species;
+
     private double avgTotalUpdate;
 
     private double avgHpUpdate;
@@ -138,11 +140,12 @@ public class TrainerStats {
         this.avgGenerationUpdate = avgGenerationUpdate;
     }
 
-    public String print() {
-        return "TrainerStats{" +
+    @Override
+    public String toString() {
+        return "TrainerStats {" +
                 "trainerId=" + trainerId +
-                ", species='" + species + '\'' +
                 ", totalTrainings=" + totalTrainings +
+                ", species='" + species + '\'' +
                 ", avgTotalUpdate=" + avgTotalUpdate +
                 ", avgHpUpdate=" + avgHpUpdate +
                 ", avgAttackUpdate=" + avgAttackUpdate +
@@ -152,5 +155,19 @@ public class TrainerStats {
                 ", avgSpeedUpdate=" + avgSpeedUpdate +
                 ", avgGenerationUpdate=" + avgGenerationUpdate +
                 '}';
+    }
+
+    public void printTopInfo() {
+        System.out.println(" Top trained species for trainer " + this.trainerId +
+                " is " + species + ":\n"+
+                "totalTrainings=" + totalTrainings +
+                ", avgTotalUpdate=" + avgTotalUpdate +
+                ", avgHpUpdate=" + avgHpUpdate +
+                ", avgAttackUpdate=" + avgAttackUpdate +
+                ", avgDefenseUpdate=" + avgDefenseUpdate +
+                ", avgSpeedAttackUpdate=" + avgSpeedAttackUpdate +
+                ", avgSpeedDefenceUpdate=" + avgSpeedDefenceUpdate +
+                ", avgSpeedUpdate=" + avgSpeedUpdate +
+                ", avgGenerationUpdate=" + avgGenerationUpdate);
     }
 }
