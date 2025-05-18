@@ -1,10 +1,7 @@
 package cassandra.ex5;
 
 import com.datastax.oss.driver.api.core.PagingIterable;
-import com.datastax.oss.driver.api.mapper.annotations.Dao;
-import com.datastax.oss.driver.api.mapper.annotations.Delete;
-import com.datastax.oss.driver.api.mapper.annotations.Insert;
-import com.datastax.oss.driver.api.mapper.annotations.Select;
+import com.datastax.oss.driver.api.mapper.annotations.*;
 
 @Dao
 public interface PokemonDao {
@@ -17,8 +14,10 @@ public interface PokemonDao {
     void delete(Pokemon pokemon);
 
     @Select(customWhereClause = "name = :name", allowFiltering = true)
+    @CqlName("pokemon")
     Pokemon findByName(String name);
 
     @Select
-    Pokemon getById();
+    @CqlName("pokemon")
+    Pokemon findById(int id);
 }

@@ -9,4 +9,10 @@ import com.datastax.oss.driver.api.mapper.annotations.Mapper;
 public interface PokemonMapper {
     @DaoFactory
     PokemonDao pokemonDao(@DaoKeyspace CqlIdentifier keyspace);
+
+    @DaoFactory
+    TrainerPokemonDao trainerPokemonDao(@DaoKeyspace CqlIdentifier keyspace);
+
+    @DaoFactory
+    TrainingSessionDao trainingSessionDao(@DaoKeyspace CqlIdentifier keyspace);
 }

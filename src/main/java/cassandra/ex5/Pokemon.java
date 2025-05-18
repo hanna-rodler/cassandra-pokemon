@@ -8,7 +8,7 @@ import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 @Entity
 public class Pokemon {
 
-    @ClusteringColumn(1)
+    @PartitionKey
     private int id;
 
     private String name;
@@ -37,7 +37,6 @@ public class Pokemon {
 
     private int generation;
 
-    @PartitionKey
     private boolean legendary;
 
     public Pokemon() {
@@ -162,5 +161,24 @@ public class Pokemon {
 
     public void setSpeed(int speed) {
         this.speed = speed;
+    }
+
+    @Override
+    public String toString() {
+        return "Pokemon{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", type='" + type + '\'' +
+                ", type2='" + type2 + '\'' +
+                ", total=" + total +
+                ", hp=" + hp +
+                ", attack=" + attack +
+                ", defense=" + defense +
+                ", speedAttack=" + speedAttack +
+                ", speedDefence=" + speedDefence +
+                ", speed=" + speed +
+                ", generation=" + generation +
+                ", legendary=" + legendary +
+                '}';
     }
 }

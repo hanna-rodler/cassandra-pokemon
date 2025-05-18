@@ -2,10 +2,12 @@ package cassandra.ex5;
 
 import cassandra.ex5_old.TrainingHistory;
 import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,20 +15,52 @@ import java.util.UUID;
 public class TrainingSession {
     @PartitionKey
     private UUID sessionId;
-    @ClusteringColumn
-    private int pokemonId;
-    private LocalDateTime timestamp;
-    private String notes; // optional
 
-    private List<TrainingHistory> trainingHistory;
+    @ClusteringColumn(0)
+    private int pokemonId;
+
+    @ClusteringColumn(1)
+    private UUID trainerId;
+
+    @ClusteringColumn(2)
+    private Instant timestamp;
+
+    private int totalUpdate;
+
+    private int hpUpdate;
+
+    private int attackUpdate;
+
+    private int defenseUpdate;
+
+    @CqlName("speed_attack_update")
+    private int speedAttackUpdate;
+
+    @CqlName("speed_defence_update")
+    private int speedDefenceUpdate;
+
+    private int speedUpdate;
+
+    private int generationUpdate;
+
+    private boolean legendaryUpdate;
 
     public TrainingSession() {}
 
-    public TrainingSession(UUID sessionId, int pokemonId, LocalDateTime timestamp, String notes) {
+    public TrainingSession(UUID sessionId, int pokemonId, UUID trainerId, Instant timestamp, int totalUpdate, int hpUpdate, int attackUpdate, int defenseUpdate, int speedAttackUpdate, int speedDefenceUpdate, int speedUpdate, int generationUpdate, boolean legendaryUpdate) {
         this.sessionId = sessionId;
         this.pokemonId = pokemonId;
+        this.trainerId = trainerId;
         this.timestamp = timestamp;
-        this.notes = notes;
+        this.totalUpdate = totalUpdate;
+        this.hpUpdate = hpUpdate;
+        this.attackUpdate = attackUpdate;
+        this.defenseUpdate = defenseUpdate;
+        this.speedAttackUpdate = speedAttackUpdate;
+        this.speedDefenceUpdate = speedDefenceUpdate;
+        this.speedUpdate = speedUpdate;
+        this.generationUpdate = generationUpdate;
+        this.legendaryUpdate = legendaryUpdate;
     }
 
     public UUID getSessionId() {
@@ -45,28 +79,92 @@ public class TrainingSession {
         this.pokemonId = pokemonId;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
 
-    public String getNotes() {
-        return notes;
+    public int getTotalUpdate() {
+        return totalUpdate;
     }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
+    public void setTotalUpdate(int totalUpdate) {
+        this.totalUpdate = totalUpdate;
     }
 
-    public List<TrainingHistory> getTrainingHistory() {
-        return trainingHistory;
+    public int getHpUpdate() {
+        return hpUpdate;
     }
 
-    public void setTrainingHistory(List<TrainingHistory> trainingHistory) {
-        this.trainingHistory = trainingHistory;
+    public void setHpUpdate(int hpUpdate) {
+        this.hpUpdate = hpUpdate;
+    }
+
+    public int getAttackUpdate() {
+        return attackUpdate;
+    }
+
+    public void setAttackUpdate(int attackUpdate) {
+        this.attackUpdate = attackUpdate;
+    }
+
+    public int getDefenseUpdate() {
+        return defenseUpdate;
+    }
+
+    public void setDefenseUpdate(int defenseUpdate) {
+        this.defenseUpdate = defenseUpdate;
+    }
+
+    public int getSpeedAttackUpdate() {
+        return speedAttackUpdate;
+    }
+
+    public void setSpeedAttackUpdate(int speedAttackUpdate) {
+        this.speedAttackUpdate = speedAttackUpdate;
+    }
+
+    public int getSpeedDefenceUpdate() {
+        return speedDefenceUpdate;
+    }
+
+    public void setSpeedDefenceUpdate(int speedDefenceUpdate) {
+        this.speedDefenceUpdate = speedDefenceUpdate;
+    }
+
+    public int getSpeedUpdate() {
+        return speedUpdate;
+    }
+
+    public void setSpeedUpdate(int speedUpdate) {
+        this.speedUpdate = speedUpdate;
+    }
+
+    public int getGenerationUpdate() {
+        return generationUpdate;
+    }
+
+    public void setGenerationUpdate(int generationUpdate) {
+        this.generationUpdate = generationUpdate;
+    }
+
+    public boolean isLegendaryUpdate() {
+        return legendaryUpdate;
+    }
+
+    public void setLegendaryUpdate(boolean legendaryUpdate) {
+        this.legendaryUpdate = legendaryUpdate;
+    }
+
+    public UUID getTrainerId() {
+        return trainerId;
+    }
+
+    public void setTrainerId(UUID trainerId) {
+        this.trainerId = trainerId;
     }
 }
 
