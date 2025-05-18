@@ -94,9 +94,8 @@ public class TrainerPokemon {
 
     @Override
     public String toString() {
-        return "TrainerPokemon{" +
+        return "\nTrainerPokemon for trainer " + trainerId + ": {" +
                 "pokemonId=" + pokemonId +
-                ", trainerId=" + trainerId +
                 ", species (type)='" + species + '\'' +
                 ", level=" + level +
                 ", xp=" + xp +
