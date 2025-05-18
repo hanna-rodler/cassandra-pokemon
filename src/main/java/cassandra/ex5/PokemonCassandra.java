@@ -24,6 +24,8 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static com.datastax.oss.driver.api.querybuilder.SchemaBuilder.*;
@@ -157,9 +159,9 @@ public class PokemonCassandra {
 
             // create table Pokemon
             CreateTableWithOptions trainingStatsTable = createTable("big_data_pokemon", "trainer_stats")
-                    .withPartitionKey("trainerId", DataTypes.UUID)
-                    .withPartitionKey("species", DataTypes.TEXT)
-                    .withColumn("total_trainings", DataTypes.INT)
+                    .withPartitionKey("trainer_id", DataTypes.UUID)
+                    .withClusteringColumn("total_trainings", DataTypes.INT)
+                    .withClusteringColumn("species", DataTypes.TEXT)
                     .withColumn("avg_total_update", DataTypes.DOUBLE)
                     .withColumn("avg_hp_update", DataTypes.DOUBLE)
                     .withColumn("avg_attack_update", DataTypes.DOUBLE)
@@ -169,7 +171,9 @@ public class PokemonCassandra {
                     .withColumn("avg_speed_update", DataTypes.DOUBLE)
                     .withColumn("avg_generation_update", DataTypes.DOUBLE)
                     .withCompaction(leveledCompactionStrategy())
-                    .withSnappyCompression();
+                    .withSnappyCompression()
+                    .withClusteringOrder("total_trainings", ClusteringOrder.DESC)
+                    .withClusteringOrder("species", ClusteringOrder.ASC);
             session.execute(trainingStatsTable.build());
 
             System.out.println(trainingStatsTable.asCql());
@@ -178,16 +182,14 @@ public class PokemonCassandra {
             PokemonDao dao = mapper.pokemonDao(CqlIdentifier.fromCql("big_data_pokemon"));
             TrainerPokemonDao trainerDao = mapper.trainerPokemonDao(CqlIdentifier.fromCql("big_data_pokemon"));
             TrainingSessionDao trainingSessionDao = mapper.trainingSessionDao(CqlIdentifier.fromCql("big_data_pokemon"));
+            TrainerStatsDao trainerStatsDao = mapper.trainerStatsDao(CqlIdentifier.fromCql("big_data_pokemon"));
 
             for (Pokemon p: pokemon) {
                 dao.save(p);
             }
 
-            System.out.println("Pokemon Delcatty is: " + dao.findById(301));
             Pokemon delcatty = dao.findById(301);
             Pokemon slowbro = dao.findById(80);
-            System.out.println("Slowbro is: " + slowbro.getName() + slowbro.getId() + slowbro.getType());
-
 
             // Create a test TrainerTypeStats object
             Trainer trainer1 = new Trainer(UUID.randomUUID(), "Hanna");
@@ -209,6 +211,7 @@ public class PokemonCassandra {
             /* ------
              EX6: Record new training session for a Pokemon
              */
+            System.out.println("---- First Round of training -----");
             TrainingSession ts1Delcatty = new TrainingSession(
                     UUID.randomUUID(),
                     delcatty.getId(),
@@ -227,76 +230,76 @@ public class PokemonCassandra {
                     slowbro.getType()
             );
 
-            TrainingSession ts2Delcatty = new TrainingSession(
-                    UUID.randomUUID(),
-                    delcatty.getId(),
-                    trainer2.getId(),
-                    Instant.now(),
-                    15, 4, 2, 2, 2, 3, 1, 0, false,
-                    delcatty.getType()
-            );
-
             TrainingSession ts1Trainer2Delcatty = new TrainingSession(
                     UUID.randomUUID(),
                     delcatty.getId(),
-                    trainer1.getId(),
+                    trainer2.getId(),
                     Instant.now(),
                     2, 1, 0, 1, 0, 1, 1, 0, false,
                     delcatty.getType()
             );
 
-            // train from trainer 1
+            // TRAIN FROM TRAINER 1
+            // Delcatty
             recordTrainingSession(session, ts1Delcatty);
-            recordTrainingSession(session, ts1Pokemon2);
-
-            // train from trainer 2
-            recordTrainingSession(session, ts1Trainer2Delcatty);
-
-            System.out.println("\nTraining Sessions: ");
-            for (TrainingSession ts : trainingSessionDao.getAllSessions()) {
-                System.out.println(ts.toString());
-            }
-            System.out.println("\n");
-
-            // EX 6 -  UPDATE POKEMON'S XP POINTS AND LEVEL
-            // update Delcatty according to Training Session - Trainer 1
             TrainingSession retrievedDelcattyTS = trainingSessionDao.getByPrimaryKey(ts1Delcatty.getSessionId(), ts1Delcatty.getPokemonId(), ts1Delcatty.getTrainerId(),  ts1Delcatty.getTimestamp(), ts1Delcatty.getSpecies());
             updateTrainerPokemonByTrainingSession(trainer1Delcatty, retrievedDelcattyTS, trainerDao, session);
-
-            // update Slowbro - Trainer 1
+            // Slowbro
+            recordTrainingSession(session, ts1Pokemon2);
             TrainingSession retrievedSlowbroTS = trainingSessionDao.getByPrimaryKey(ts1Delcatty.getSessionId(), ts1Delcatty.getPokemonId(), ts1Delcatty.getTrainerId(),  ts1Delcatty.getTimestamp(), ts1Delcatty.getSpecies());
             updateTrainerPokemonByTrainingSession(trainerPokemon2, retrievedSlowbroTS, trainerDao, session);
 
-            // update Delcatty according to Training Session - Trainer 2
+            // TRAIN FROM TRAINER 2
+            recordTrainingSession(session, ts1Trainer2Delcatty);
             TrainingSession retrievedDelcattyTSTrainer2 = trainingSessionDao.getByPrimaryKey(ts1Trainer2Delcatty.getSessionId(), ts1Trainer2Delcatty.getPokemonId(), ts1Trainer2Delcatty.getTrainerId(),  ts1Trainer2Delcatty.getTimestamp(), ts1Delcatty.getSpecies());
             updateTrainerPokemonByTrainingSession(trainer2Delcatty, retrievedDelcattyTSTrainer2, trainerDao, session);
             retrievedDelcattyTSTrainer2.toString();
 
+            System.out.println("--> Update training statistics");
+            // update trainer's statistics for that pokemon type.
+            recalculateTrainerStatistics(session, trainingSessionDao);
 
+            printTopTrainedSpeciesByTrainer(trainer1.getId(), trainerStatsDao);
+            printTopTrainedSpeciesByTrainer(trainer2.getId(), trainerStatsDao);
+
+            System.out.println("\n---- Second Round of training -----");
+            // TRAINER 1
+            TrainingSession ts2Delcatty = new TrainingSession(
+                    UUID.randomUUID(),
+                    delcatty.getId(),
+                    trainer1.getId(),
+                    Instant.now(),
+                    15, 4, 2, 2, 2, 3, 1, 0, false,
+                    delcatty.getType()
+            );
             System.out.println("Train Delcatty by Trainer 1 again");
             recordTrainingSession(session, ts2Delcatty);
             TrainingSession retrievedDelcattyTS2 = trainingSessionDao.getByPrimaryKey(ts2Delcatty.getSessionId(), ts2Delcatty.getPokemonId(), ts2Delcatty.getTrainerId(),  ts2Delcatty.getTimestamp(), ts2Delcatty.getSpecies());
             TrainerPokemon delcattyTrainer1AfterTS1 = trainerDao.getPokemonById(ts2Delcatty.getTrainerId(), ts2Delcatty.getPokemonId());
             updateTrainerPokemonByTrainingSession(delcattyTrainer1AfterTS1, retrievedDelcattyTS2, trainerDao, session);
 
+            // TRAINER 2
+            TrainingSession ts2Trainer2Delcatty = new TrainingSession(
+                    UUID.randomUUID(),
+                    delcatty.getId(),
+                    trainer2.getId(),
+                    Instant.now(),
+                    20, 2, 15, 1, 0, 1, 1, 1, false,
+                    delcatty.getType()
+            );
+            recordTrainingSession(session, ts2Trainer2Delcatty);
+            TrainingSession retrievedDelcattyTS2Trainer2 = trainingSessionDao.getByPrimaryKey(ts2Trainer2Delcatty.getSessionId(), ts2Trainer2Delcatty.getPokemonId(), ts2Trainer2Delcatty.getTrainerId(),  ts2Trainer2Delcatty.getTimestamp(), ts2Trainer2Delcatty.getSpecies());
+            TrainerPokemon delcattyTrainer2AfterTS2 = trainerDao.getPokemonById(ts2Trainer2Delcatty.getTrainerId(), ts2Trainer2Delcatty.getPokemonId());
+            updateTrainerPokemonByTrainingSession(delcattyTrainer2AfterTS2, retrievedDelcattyTS2Trainer2, trainerDao, session);
+//            recalculateTrainerStatisticsForTrainer(session, trainingSessionDao, trainer2.getId());
+            printTopTrainedSpeciesByTrainer(trainer2.getId(), trainerStatsDao);
 
+            System.out.println("--> Update training statistics");
             // update trainer's statistics for that pokemon type.
-            System.out.println("\n--- Calculate Stats per Trainer per Species (Type):");
-            System.out.println("\nTraining Sessions: ");
-            Map<String, StatsAccumulator> statsPerTrainerSpecies = new HashMap<>();
+            recalculateTrainerStatistics(session, trainingSessionDao);
 
-            for (TrainingSession ts : trainingSessionDao.getAllSessions()) {
-                UUID trainerId = ts.getTrainerId();
-                String species = ts.getSpecies();
-                String key = trainerId.toString() + "_" + species;
-
-                statsPerTrainerSpecies
-                        .computeIfAbsent(key, k -> new StatsAccumulator())
-                        .add(ts);
-            }
-            System.out.println("\n");
-
-            recordTrainingStats(session, statsPerTrainerSpecies);
+            printTopTrainedSpeciesByTrainer(trainer1.getId(), trainerStatsDao);
+            printTopTrainedSpeciesByTrainer(trainer2.getId(), trainerStatsDao);
 
 
         } catch (Exception e) {
@@ -304,9 +307,65 @@ public class PokemonCassandra {
         }
     }
 
-    // TODO: As a trainer, I want to see which Pokemon types I have trained the most and their average
-    //improvement in stats.
-    // Updates the trainer’s statistics for that Pokemon type
+    private static void recalculateTrainerStatistics(CqlSession session, TrainingSessionDao trainingSessionDao) {
+        // update trainer's statistics for that pokemon type.
+        System.out.println("\n--- Calculate Stats per Trainer per Species (Type):");
+        Map<String, StatsAccumulator> statsPerTrainerSpecies = new HashMap<>();
+
+        for (TrainingSession ts : trainingSessionDao.getAllSessions()) {
+            UUID trainerId = ts.getTrainerId();
+            String species = ts.getSpecies();
+            String key = trainerId.toString() + "_" + species;
+
+            statsPerTrainerSpecies
+                    .computeIfAbsent(key, k -> new StatsAccumulator())
+                    .add(ts);
+        }
+        System.out.println("\nRecording Training Stats:");
+        recordTrainingStats(session, statsPerTrainerSpecies);
+    }
+
+    private static void updateTrainerStatisticsForTrainer(CqlSession session, TrainingSessionDao trainingSessionDao, UUID trainerId) {
+        // update trainer's statistics for that pokemon type.
+        System.out.println("\n--- Calculate Stats per Trainer per Species (Type):");
+        Map<String, StatsAccumulator> statsPerTrainerSpecies = new HashMap<>();
+
+        for (TrainingSession ts : trainingSessionDao.getAllSessions()) {
+            if(ts.getTrainerId() == trainerId) {
+                String species = ts.getSpecies();
+                String key = trainerId.toString() + "_" + species;
+
+                statsPerTrainerSpecies
+                        .computeIfAbsent(key, k -> new StatsAccumulator())
+                        .add(ts);
+            }
+        }
+        System.out.println("\nRecording Training Stats:");
+        recordTrainingStats(session, statsPerTrainerSpecies);
+    }
+
+    private static void printTopTrainedSpeciesByTrainer(UUID trainerId, TrainerStatsDao trainerStatsDao) {
+        Optional<TrainerStats> topSpeciesStats = trainerStatsDao.findTopSpeciesByTrainerId(trainerId);
+
+        if (topSpeciesStats.isPresent()) {
+            TrainerStats stats = topSpeciesStats.get();
+            System.out.println("Top trained species for trainer " + trainerId + ": " + stats.getSpecies());
+            System.out.println(
+                    "totalTrainings=" + stats.getTotalTrainings() +
+                            ", avgTotalUpdate=" + stats.getAvgTotalUpdate() +
+                            ", avgHpUpdate=" + stats.getAvgHpUpdate() +
+                            ", avgAttackUpdate=" + stats.getAvgAttackUpdate() +
+                            ", avgDefenseUpdate=" + stats.getAvgDefenseUpdate() +
+                            ", avgSpeedAttackUpdate=" + stats.getAvgSpeedAttackUpdate() +
+                            ", avgSpeedDefenceUpdate=" + stats.getAvgSpeedDefenceUpdate()+
+                            ", avgSpeedUpdate=" + stats.getAvgSpeedUpdate() +
+                            ", avgGenerationUpdate=" + stats.getAvgGenerationUpdate()
+            );
+            topSpeciesStats.toString();
+        } else {
+            System.out.println("No training stats found for trainer " + trainerId);
+        }
+    }
 
     private static void recordTrainingStats(CqlSession session, Map<String, StatsAccumulator> statsPerTrainerSpecies) {
         BatchStatementBuilder batchBuilder = BatchStatement.builder(DefaultBatchType.LOGGED);
@@ -318,12 +377,9 @@ public class PokemonCassandra {
             UUID trainerId = UUID.fromString(parts[0]);
             String species = parts[1];
 
-            System.out.println("Trainer-Species: " + entry.getKey() + " has average stats:" + entry.getValue().averages());
-
-
             SimpleStatement insertStmt = SimpleStatement.builder(
                             "INSERT INTO big_data_pokemon.trainer_stats " +
-                                    "(trainerId, species, total_trainings, " +
+                                    "(trainer_id, species, total_trainings, " +
                                     "avg_total_update, avg_hp_update, avg_attack_update, avg_defense_update, avg_speed_attack_update, " +
                                     "avg_speed_defence_update, avg_speed_update, avg_generation_update) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
                     .addPositionalValues(

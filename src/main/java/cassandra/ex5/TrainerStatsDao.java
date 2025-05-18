@@ -1,8 +1,10 @@
 package cassandra.ex5;
 
-import com.datastax.oss.driver.api.mapper.annotations.Dao;
-import com.datastax.oss.driver.api.mapper.annotations.Delete;
-import com.datastax.oss.driver.api.mapper.annotations.Insert;
+import com.datastax.oss.driver.api.core.PagingIterable;
+import com.datastax.oss.driver.api.mapper.annotations.*;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Dao
 public interface TrainerStatsDao {
@@ -11,4 +13,11 @@ public interface TrainerStatsDao {
 
     @Delete
     void delete(TrainerStats trainerStats);
+
+    @Select
+    @Query("SELECT * FROM trainer_stats")
+    PagingIterable<TrainerStats> getAllTrainerStats();
+
+    @Query("SELECT * FROM big_data_pokemon.trainer_stats WHERE trainer_id = :trainer_id LIMIT 1")
+    Optional<TrainerStats> findTopSpeciesByTrainerId(@CqlName("trainer_id") UUID trainerId);
 }

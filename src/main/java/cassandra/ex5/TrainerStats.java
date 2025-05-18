@@ -12,30 +12,31 @@ public class TrainerStats {
 
     @PartitionKey
     private UUID trainerId;
-    @PartitionKey(1)
+    @ClusteringColumn(1)
     private String species;
+    @ClusteringColumn
     private int totalTrainings;
-    private int avgTotalUpdate;
+    private double avgTotalUpdate;
 
-    private int avgHpUpdate;
+    private double avgHpUpdate;
 
-    private int avgAttackUpdate;
+    private double avgAttackUpdate;
 
-    private int avgDefenseUpdate;
+    private double avgDefenseUpdate;
 
-    @CqlName("speed_attack_update")
-    private int avgSpeedAttackUpdate;
+    @CqlName("avg_speed_attack_update")
+    private double avgSpeedAttackUpdate;
 
-    @CqlName("speed_defence_update")
-    private int avgSpeedDefenceUpdate;
+    @CqlName("avg_speed_defence_update")
+    private double avgSpeedDefenceUpdate;
 
-    private int avgSpeedUpdate;
+    private double avgSpeedUpdate;
 
-    private int avgGenerationUpdate;
+    private double avgGenerationUpdate;
 
     public TrainerStats() {}
 
-    public TrainerStats(UUID trainerId, String species, int totalTrainings, int avgTotalUpdate, int avgHpUpdate, int avgAttackUpdate, int avgDefenseUpdate, int avgSpeedAttackUpdate, int avgSpeedDefenceUpdate, int avgSpeedUpdate, int avgGenerationUpdate) {
+    public TrainerStats(UUID trainerId, String species, int totalTrainings, double avgTotalUpdate, double avgHpUpdate, double avgAttackUpdate, double avgDefenseUpdate, double avgSpeedAttackUpdate, double avgSpeedDefenceUpdate, double avgSpeedUpdate, double avgGenerationUpdate) {
         this.trainerId = trainerId;
         this.species = species;
         this.totalTrainings = totalTrainings;
@@ -57,6 +58,14 @@ public class TrainerStats {
         this.trainerId = trainerId;
     }
 
+    public String getSpecies() {
+        return species;
+    }
+
+    public void setSpecies(String species) {
+        this.species = species;
+    }
+
     public int getTotalTrainings() {
         return totalTrainings;
     }
@@ -65,75 +74,83 @@ public class TrainerStats {
         this.totalTrainings = totalTrainings;
     }
 
-    public int getTotalUpdate() {
+    public double getAvgTotalUpdate() {
         return avgTotalUpdate;
     }
 
-    public void setTotalUpdate(int avgTotalUpdate) {
+    public void setAvgTotalUpdate(double avgTotalUpdate) {
         this.avgTotalUpdate = avgTotalUpdate;
     }
 
-    public int getAvgHpUpdate() {
+    public double getAvgHpUpdate() {
         return avgHpUpdate;
     }
 
-    public void setAvgHpUpdate(int avgHpUpdate) {
+    public void setAvgHpUpdate(double avgHpUpdate) {
         this.avgHpUpdate = avgHpUpdate;
     }
 
-    public int getAvgAttackUpdate() {
+    public double getAvgAttackUpdate() {
         return avgAttackUpdate;
     }
 
-    public void setAvgAttackUpdate(int avgAttackUpdate) {
+    public void setAvgAttackUpdate(double avgAttackUpdate) {
         this.avgAttackUpdate = avgAttackUpdate;
     }
 
-    public int getAvgDefenseUpdate() {
+    public double getAvgDefenseUpdate() {
         return avgDefenseUpdate;
     }
 
-    public void setAvgDefenseUpdate(int avgDefenseUpdate) {
+    public void setAvgDefenseUpdate(double avgDefenseUpdate) {
         this.avgDefenseUpdate = avgDefenseUpdate;
     }
 
-    public int getAvgSpeedAttackUpdate() {
+    public double getAvgSpeedAttackUpdate() {
         return avgSpeedAttackUpdate;
     }
 
-    public void setAvgSpeedAttackUpdate(int avgSpeedAttackUpdate) {
+    public void setAvgSpeedAttackUpdate(double avgSpeedAttackUpdate) {
         this.avgSpeedAttackUpdate = avgSpeedAttackUpdate;
     }
 
-    public int getAvgSpeedDefenceUpdate() {
+    public double getAvgSpeedDefenceUpdate() {
         return avgSpeedDefenceUpdate;
     }
 
-    public void setAvgSpeedDefenceUpdate(int avgSpeedDefenceUpdate) {
+    public void setAvgSpeedDefenceUpdate(double avgSpeedDefenceUpdate) {
         this.avgSpeedDefenceUpdate = avgSpeedDefenceUpdate;
     }
 
-    public int getAvgSpeedUpdate() {
+    public double getAvgSpeedUpdate() {
         return avgSpeedUpdate;
     }
 
-    public void setAvgSpeedUpdate(int avgSpeedUpdate) {
+    public void setAvgSpeedUpdate(double avgSpeedUpdate) {
         this.avgSpeedUpdate = avgSpeedUpdate;
     }
 
-    public int getAvgGenerationUpdate() {
+    public double getAvgGenerationUpdate() {
         return avgGenerationUpdate;
     }
 
-    public void setAvgGenerationUpdate(int avgGenerationUpdate) {
+    public void setAvgGenerationUpdate(double avgGenerationUpdate) {
         this.avgGenerationUpdate = avgGenerationUpdate;
     }
 
-    public String getSpecies() {
-        return species;
-    }
-
-    public void setSpecies(String species) {
-        this.species = species;
+    public String print() {
+        return "TrainerStats{" +
+                "trainerId=" + trainerId +
+                ", species='" + species + '\'' +
+                ", totalTrainings=" + totalTrainings +
+                ", avgTotalUpdate=" + avgTotalUpdate +
+                ", avgHpUpdate=" + avgHpUpdate +
+                ", avgAttackUpdate=" + avgAttackUpdate +
+                ", avgDefenseUpdate=" + avgDefenseUpdate +
+                ", avgSpeedAttackUpdate=" + avgSpeedAttackUpdate +
+                ", avgSpeedDefenceUpdate=" + avgSpeedDefenceUpdate +
+                ", avgSpeedUpdate=" + avgSpeedUpdate +
+                ", avgGenerationUpdate=" + avgGenerationUpdate +
+                '}';
     }
 }

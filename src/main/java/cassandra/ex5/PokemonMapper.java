@@ -15,4 +15,7 @@ public interface PokemonMapper {
 
     @DaoFactory
     TrainingSessionDao trainingSessionDao(@DaoKeyspace CqlIdentifier keyspace);
+
+    @DaoFactory
+    TrainerStatsDao trainerStatsDao(@DaoKeyspace CqlIdentifier keyspace);
 }

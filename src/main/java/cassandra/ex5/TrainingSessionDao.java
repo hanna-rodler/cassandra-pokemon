@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.mapper.annotations.*;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Dao
@@ -22,5 +23,4 @@ public interface TrainingSessionDao {
     @Select
     @Query("SELECT * FROM training_session")
     PagingIterable<TrainingSession> getAllSessions();
-
 }
