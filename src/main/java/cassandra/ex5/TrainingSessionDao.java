@@ -16,7 +16,7 @@ public interface TrainingSessionDao {
     void delete(TrainingSession trainingSession);
 
     @Select
-    TrainingSession getByPrimaryKey(UUID sessionId, int pokemonId, UUID trainerId, Instant timestamp);
+    TrainingSession getByPrimaryKey(UUID sessionId, int pokemonId, UUID trainerId, Instant timestamp, String species);
 
 
     @Select

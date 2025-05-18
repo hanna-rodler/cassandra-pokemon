@@ -2,6 +2,7 @@ package cassandra.ex5;
 
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.PagingIterable;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
@@ -10,6 +11,7 @@ import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateKeyspace;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateTableWithOptions;
+import com.datastax.oss.driver.api.querybuilder.select.Select;
 import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableMap;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
@@ -23,7 +25,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static com.datastax.oss.driver.api.querybuilder.SchemaBuilder.*;
+import static com.datastax.oss.driver.api.querybuilder.select.Selector.column;
 
 public class PokemonCassandra {
 
@@ -128,6 +132,7 @@ public class PokemonCassandra {
                     .withClusteringColumn("pokemon_id", DataTypes.INT)
                     .withClusteringColumn("trainer_id", DataTypes.UUID)
                     .withClusteringColumn("timestamp", DataTypes.TIMESTAMP)
+                    .withClusteringColumn("species", DataTypes.TEXT)
                     .withColumn("total_update", DataTypes.INT)
                     .withColumn("hp_update", DataTypes.INT)
                     .withColumn("attack_update", DataTypes.INT)
@@ -143,7 +148,31 @@ public class PokemonCassandra {
 
             session.execute(trainingSessionTable.build());
 
-            System.out.println(trainingSessionTable.asCql()); // nur für uns zum anschauen
+            System.out.println(trainingSessionTable.asCql());
+
+            /* -----------------
+            TRAINING STATS
+             ------ */
+          session.execute(dropTable("big_data_pokemon", "trainer_stats").ifExists().build());
+
+            // create table Pokemon
+            CreateTableWithOptions trainingStatsTable = createTable("big_data_pokemon", "trainer_stats")
+                    .withPartitionKey("trainerId", DataTypes.UUID)
+                    .withPartitionKey("species", DataTypes.TEXT)
+                    .withColumn("total_trainings", DataTypes.INT)
+                    .withColumn("avg_total_update", DataTypes.DOUBLE)
+                    .withColumn("avg_hp_update", DataTypes.DOUBLE)
+                    .withColumn("avg_attack_update", DataTypes.DOUBLE)
+                    .withColumn("avg_defense_update", DataTypes.DOUBLE)
+                    .withColumn("avg_speed_attack_update", DataTypes.DOUBLE)
+                    .withColumn("avg_speed_defence_update", DataTypes.DOUBLE)
+                    .withColumn("avg_speed_update", DataTypes.DOUBLE)
+                    .withColumn("avg_generation_update", DataTypes.DOUBLE)
+                    .withCompaction(leveledCompactionStrategy())
+                    .withSnappyCompression();
+            session.execute(trainingStatsTable.build());
+
+            System.out.println(trainingStatsTable.asCql());
 
             PokemonMapper mapper = new PokemonMapperBuilder(session).build();
             PokemonDao dao = mapper.pokemonDao(CqlIdentifier.fromCql("big_data_pokemon"));
@@ -185,7 +214,8 @@ public class PokemonCassandra {
                     delcatty.getId(),
                     trainer1.getId(),
                     Instant.now(),
-                    10, 2, 3, 1, 2, 1, 1, 0, false
+                    10, 2, 3, 1, 2, 1, 1, 0, false,
+                    delcatty.getType()
                     );
 
             TrainingSession ts1Pokemon2 = new TrainingSession(
@@ -193,15 +223,17 @@ public class PokemonCassandra {
                     slowbro.getId(),
                     trainer1.getId(),
                     Instant.now(),
-                    2, 5, -1, 1, 2, 0, 1, 0, false
+                    2, 5, -1, 1, 2, 0, 1, 0, false,
+                    slowbro.getType()
             );
 
             TrainingSession ts2Delcatty = new TrainingSession(
                     UUID.randomUUID(),
                     delcatty.getId(),
-                    trainer1.getId(),
+                    trainer2.getId(),
                     Instant.now(),
-                    15, 4, 2, 2, 2, 3, 1, 0, false
+                    15, 4, 2, 2, 2, 3, 1, 0, false,
+                    delcatty.getType()
             );
 
             TrainingSession ts1Trainer2Delcatty = new TrainingSession(
@@ -209,7 +241,8 @@ public class PokemonCassandra {
                     delcatty.getId(),
                     trainer1.getId(),
                     Instant.now(),
-                    2, 1, 0, 1, 0, 1, 1, 0, false
+                    2, 1, 0, 1, 0, 1, 1, 0, false,
+                    delcatty.getType()
             );
 
             // train from trainer 1
@@ -227,27 +260,43 @@ public class PokemonCassandra {
 
             // EX 6 -  UPDATE POKEMON'S XP POINTS AND LEVEL
             // update Delcatty according to Training Session - Trainer 1
-            TrainingSession retrievedDelcattyTS = trainingSessionDao.getByPrimaryKey(ts1Delcatty.getSessionId(), ts1Delcatty.getPokemonId(), ts1Delcatty.getTrainerId(),  ts1Delcatty.getTimestamp());
+            TrainingSession retrievedDelcattyTS = trainingSessionDao.getByPrimaryKey(ts1Delcatty.getSessionId(), ts1Delcatty.getPokemonId(), ts1Delcatty.getTrainerId(),  ts1Delcatty.getTimestamp(), ts1Delcatty.getSpecies());
             updateTrainerPokemonByTrainingSession(trainer1Delcatty, retrievedDelcattyTS, trainerDao, session);
 
             // update Slowbro - Trainer 1
-            TrainingSession retrievedSlowbroTS = trainingSessionDao.getByPrimaryKey(ts1Delcatty.getSessionId(), ts1Delcatty.getPokemonId(), ts1Delcatty.getTrainerId(),  ts1Delcatty.getTimestamp());
+            TrainingSession retrievedSlowbroTS = trainingSessionDao.getByPrimaryKey(ts1Delcatty.getSessionId(), ts1Delcatty.getPokemonId(), ts1Delcatty.getTrainerId(),  ts1Delcatty.getTimestamp(), ts1Delcatty.getSpecies());
             updateTrainerPokemonByTrainingSession(trainerPokemon2, retrievedSlowbroTS, trainerDao, session);
 
             // update Delcatty according to Training Session - Trainer 2
-            TrainingSession retrievedDelcattyTSTrainer2 = trainingSessionDao.getByPrimaryKey(ts1Trainer2Delcatty.getSessionId(), ts1Trainer2Delcatty.getPokemonId(), ts1Trainer2Delcatty.getTrainerId(),  ts1Trainer2Delcatty.getTimestamp());
+            TrainingSession retrievedDelcattyTSTrainer2 = trainingSessionDao.getByPrimaryKey(ts1Trainer2Delcatty.getSessionId(), ts1Trainer2Delcatty.getPokemonId(), ts1Trainer2Delcatty.getTrainerId(),  ts1Trainer2Delcatty.getTimestamp(), ts1Delcatty.getSpecies());
             updateTrainerPokemonByTrainingSession(trainer2Delcatty, retrievedDelcattyTSTrainer2, trainerDao, session);
+            retrievedDelcattyTSTrainer2.toString();
 
 
             System.out.println("Train Delcatty by Trainer 1 again");
             recordTrainingSession(session, ts2Delcatty);
-            TrainingSession retrievedDelcattyTS2 = trainingSessionDao.getByPrimaryKey(ts2Delcatty.getSessionId(), ts2Delcatty.getPokemonId(), ts2Delcatty.getTrainerId(),  ts2Delcatty.getTimestamp());
+            TrainingSession retrievedDelcattyTS2 = trainingSessionDao.getByPrimaryKey(ts2Delcatty.getSessionId(), ts2Delcatty.getPokemonId(), ts2Delcatty.getTrainerId(),  ts2Delcatty.getTimestamp(), ts2Delcatty.getSpecies());
             TrainerPokemon delcattyTrainer1AfterTS1 = trainerDao.getPokemonById(ts2Delcatty.getTrainerId(), ts2Delcatty.getPokemonId());
             updateTrainerPokemonByTrainingSession(delcattyTrainer1AfterTS1, retrievedDelcattyTS2, trainerDao, session);
 
 
             // update trainer's statistics for that pokemon type.
+            System.out.println("\n--- Calculate Stats per Trainer per Species (Type):");
+            System.out.println("\nTraining Sessions: ");
+            Map<String, StatsAccumulator> statsPerTrainerSpecies = new HashMap<>();
 
+            for (TrainingSession ts : trainingSessionDao.getAllSessions()) {
+                UUID trainerId = ts.getTrainerId();
+                String species = ts.getSpecies();
+                String key = trainerId.toString() + "_" + species;
+
+                statsPerTrainerSpecies
+                        .computeIfAbsent(key, k -> new StatsAccumulator())
+                        .add(ts);
+            }
+            System.out.println("\n");
+
+            recordTrainingStats(session, statsPerTrainerSpecies);
 
 
         } catch (Exception e) {
@@ -258,6 +307,45 @@ public class PokemonCassandra {
     // TODO: As a trainer, I want to see which Pokemon types I have trained the most and their average
     //improvement in stats.
     // Updates the trainer’s statistics for that Pokemon type
+
+    private static void recordTrainingStats(CqlSession session, Map<String, StatsAccumulator> statsPerTrainerSpecies) {
+        BatchStatementBuilder batchBuilder = BatchStatement.builder(DefaultBatchType.LOGGED);
+
+        for (Map.Entry<String, StatsAccumulator> entry : statsPerTrainerSpecies.entrySet()) {
+            String key = entry.getKey(); // format: "trainerId_species"
+            StatsAccumulator acc = entry.getValue();
+            String[] parts = key.split("_", 2);
+            UUID trainerId = UUID.fromString(parts[0]);
+            String species = parts[1];
+
+            System.out.println("Trainer-Species: " + entry.getKey() + " has average stats:" + entry.getValue().averages());
+
+
+            SimpleStatement insertStmt = SimpleStatement.builder(
+                            "INSERT INTO big_data_pokemon.trainer_stats " +
+                                    "(trainerId, species, total_trainings, " +
+                                    "avg_total_update, avg_hp_update, avg_attack_update, avg_defense_update, avg_speed_attack_update, " +
+                                    "avg_speed_defence_update, avg_speed_update, avg_generation_update) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                    .addPositionalValues(
+                            trainerId,
+                            species,
+                            acc.count,
+                            acc.averages().get("avg_total"),
+                            acc.averages().get("avg_hp"),
+                            acc.averages().get("avg_attack"),
+                            acc.averages().get("avg_defense"),
+                            acc.averages().get("avg_speed_attack"),
+                            acc.averages().get("avg_speed_defense"),
+                            acc.averages().get("avg_speed"),
+                            acc.averages().get("avg_generation")
+                    )
+                    .build();
+
+            batchBuilder.addStatement(insertStmt);
+        }
+
+        session.execute(batchBuilder.build());
+    }
 
     private static void updateTrainerPokemonByTrainingSession(TrainerPokemon tp, TrainingSession ts, TrainerPokemonDao trainerDao, CqlSession session) {
         System.out.println("\n------- UPDATING POKEMON AFTER TRAINING --------");
@@ -310,13 +398,13 @@ public class PokemonCassandra {
         // Prepare insert for training_session
         PreparedStatement insertTraining = session.prepare(
                 "INSERT INTO big_data_pokemon.training_session (" +
-                        "session_id, pokemon_id, trainer_id, timestamp, total_update, hp_update, attack_update, defense_update, " +
+                        "session_id, pokemon_id, trainer_id, timestamp, species, total_update, hp_update, attack_update, defense_update, " +
                         "speed_attack_update, speed_defence_update, speed_update, generation_update, legendary_update) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
         );
 
         BoundStatement insertTrainingBound = insertTraining.bind(
-                ts.getSessionId(), ts.getPokemonId(), ts.getTrainerId(), ts.getTimestamp(),
+                ts.getSessionId(), ts.getPokemonId(), ts.getTrainerId(), ts.getTimestamp(),ts.getSpecies(),
                 ts.getTotalUpdate(), ts.getHpUpdate(), ts.getAttackUpdate(), ts.getDefenseUpdate(),
                 ts.getSpeedAttackUpdate(), ts.getSpeedDefenceUpdate(), ts.getSpeedUpdate(),
                 ts.getGenerationUpdate(), ts.isLegendaryUpdate()

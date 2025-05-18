@@ -5,10 +5,10 @@ import com.datastax.oss.driver.api.mapper.annotations.Delete;
 import com.datastax.oss.driver.api.mapper.annotations.Insert;
 
 @Dao
-public interface TrainerTypeStatsDao {
+public interface TrainerStatsDao {
     @Insert
-    void save(TrainerTypeStats trainerTypeStats);
+    void save(TrainerStats trainerStats);
 
     @Delete
-    void delete(TrainerTypeStats trainerTypeStats);
+    void delete(TrainerStats trainerStats);
 }

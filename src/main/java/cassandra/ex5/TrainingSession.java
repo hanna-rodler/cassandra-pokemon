@@ -19,6 +19,9 @@ public class TrainingSession {
     @ClusteringColumn(0)
     private int pokemonId;
 
+    @ClusteringColumn(3)
+    private String species;
+
     @ClusteringColumn(1)
     private UUID trainerId;
 
@@ -47,7 +50,7 @@ public class TrainingSession {
 
     public TrainingSession() {}
 
-    public TrainingSession(UUID sessionId, int pokemonId, UUID trainerId, Instant timestamp, int totalUpdate, int hpUpdate, int attackUpdate, int defenseUpdate, int speedAttackUpdate, int speedDefenceUpdate, int speedUpdate, int generationUpdate, boolean legendaryUpdate) {
+    public TrainingSession(UUID sessionId, int pokemonId, UUID trainerId, Instant timestamp, int totalUpdate, int hpUpdate, int attackUpdate, int defenseUpdate, int speedAttackUpdate, int speedDefenceUpdate, int speedUpdate, int generationUpdate, boolean legendaryUpdate, String species) {
         this.sessionId = sessionId;
         this.pokemonId = pokemonId;
         this.trainerId = trainerId;
@@ -61,6 +64,7 @@ public class TrainingSession {
         this.speedUpdate = speedUpdate;
         this.generationUpdate = generationUpdate;
         this.legendaryUpdate = legendaryUpdate;
+        this.species = species;
     }
 
     public UUID getSessionId() {
@@ -165,6 +169,26 @@ public class TrainingSession {
 
     public void setTrainerId(UUID trainerId) {
         this.trainerId = trainerId;
+    }
+
+    public String getSpecies() {
+        return species;
+    }
+
+    public void setSpecies(String species) {
+        this.species = species;
+    }
+
+    @Override
+    public String toString() {
+        return "TrainingSession{" +
+                "sessionId=" + sessionId +
+                ", pokemonId=" + pokemonId +
+                ", species='" + species + '\'' +
+                ", trainerId=" + trainerId +
+                ", totalUpdate=" + totalUpdate +
+                ", hpUpdate=" + hpUpdate   +
+                '}';
     }
 }
 
